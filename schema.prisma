@@ -1,0 +1,340 @@
+// =====================================================
+// ENUMS
+// =====================================================
+enum QuestionType {
+  NORMAL_MCQ
+  NORMAL_MCQ_WITH_IMAGES
+  EXTRACTS_WITH_MCQ
+  EXTRACTS_WITH_MATCHING
+  WRITING_TASK
+  SENTENCE_MATCHING
+  GAP_FILL_DROPDOWN
+}
+
+
+
+enum TestStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AttemptStatus {
+  WELCOME
+  INSTRUCTIONS_VIEWED
+  IN_PROGRESS
+  PAUSED
+  COMPLETED
+  TIMED_OUT
+  ABANDONED
+}
+
+
+
+// =====================================================
+// CATEGORY
+// =====================================================
+model Category {
+  id            Int       @id @default(autoincrement())
+  name          String    @db.VarChar(255)
+  slug          String    @db.VarChar(255) @unique
+  description   String?   @db.Text
+  displayOrder  Int       @default(0)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  tests         Test[]
+
+  @@index([slug])
+  @@index([displayOrder])
+  @@index([isActive])
+  @@map("categories")
+}
+
+// =====================================================
+// TEST
+// =====================================================
+model Test {
+  id              Int       @id @default(autoincrement())
+  categoryId      Int
+  title           String    @db.VarChar(255)
+  slug            String    @db.VarChar(255) @unique
+  description     String?   @db.Text
+  totalQuestions  Int       @default(0)
+  timeLimit       Int?      // in minutes, null means no limit
+  status          TestStatus @default(DRAFT)
+  displayOrder    Int       @default(0)
+  createdBy       Int?      // WordPress user ID
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  category        Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  instructions    Instruction[]
+  testQuestions   TestQuestion[]
+  attempts        UserAttempt[]
+
+  @@unique([categoryId, title])
+  @@index([slug])
+  @@index([status])
+  @@map("tests")
+}
+
+// =====================================================
+// INSTRUCTION
+// =====================================================
+model Instruction {
+  id              Int       @id @default(autoincrement())
+  testId          Int
+  pageNumber      Int
+  title           String?   @db.VarChar(255)
+  content         String    @db.Text // HTML content from editor
+  displayOrder    Int
+
+  // Relations
+  test            Test      @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@unique([testId, pageNumber])
+  @@index([displayOrder])
+  @@map("instructions")
+}
+
+// =====================================================
+// QUESTION (Main Question Table)
+// =====================================================
+model Question {
+  id             String   @id @default(cuid())
+  questionType   QuestionType
+  questionContent String? @db.Text // HTML content from text editor (common field)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  testQuestions  TestQuestion[]
+  normalMCQ           NormalMCQ?
+  normalMCQWithImages NormalMCQWithImages?
+  extractsWithMCQ     ExtractsWithMCQ?
+  extractsWithMatching ExtractsWithMatching?
+  writingTask         WritingTask?
+  sentenceMatching    SentenceMatching?
+  gapFillDropdown     GapFillDropdown?
+  userAnswers         UserAnswer[]
+
+  @@map("questions")
+}
+
+// =====================================================
+// TEST QUESTION (Pivot Table)
+// =====================================================
+model TestQuestion {
+  id              Int       @id @default(autoincrement())
+  testId          Int
+  questionId      String
+  questionNumber  Int
+  isRequired      Boolean   @default(true)
+  displayOrder    Int
+
+  // Relations
+  test            Test      @relation(fields: [testId], references: [id], onDelete: Cascade)
+  question        Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([testId, questionId])
+  @@unique([testId, questionNumber])
+  @@index([displayOrder])
+  @@map("test_questions")
+}
+
+// =====================================================
+// NORMAL_MCQ
+// =====================================================
+model NormalMCQ {
+  id            String   @id @default(cuid())
+  questionId    String   @unique
+  question      Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  options       Json // [{ id: "opt1", text: "option text" }]
+  correctAnswer String // option id
+
+  @@map("normal_mcq")
+}
+
+// =====================================================
+// NORMAL_MCQ_WITH_IMAGES
+// =====================================================
+model NormalMCQWithImages {
+  id            String   @id @default(cuid())
+  questionId    String   @unique
+  question      Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  options       Json // [{ id: "opt1", imageUrl: "/path.jpg", text: "Option A" }]
+  correctAnswer String // option id
+
+  @@map("normal_mcq_images")
+}
+
+// =====================================================
+// EXTRACTS_WITH_MCQ
+// =====================================================
+model ExtractsWithMCQ {
+  id            String   @id @default(cuid())
+  questionId    String   @unique
+  question      Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  extracts      Json // [{ id: "A", questionContent: "html content" }]
+  optionsContent String? @db.Text // HTML content for options section
+  options       Json // [{ id: "opt_001", text: "option text" }]
+  correctAnswer String // option id
+
+  @@map("extracts_mcq")
+}
+
+// =====================================================
+// EXTRACTS_WITH_MATCHING
+// =====================================================
+model ExtractsWithMatching {
+  id            String   @id @default(cuid())
+  questionId    String   @unique
+  question      Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  extracts      Json // [{ id: "A", questionContent: "html content" }]
+  statements    Json // [{ id: "stmt_01", text: "statement text", correctExtractId: "A" }]
+
+  @@map("extracts_matching")
+}
+
+// =====================================================
+// WRITING_TASK
+// =====================================================
+model WritingTask {
+  id            String   @id @default(cuid())
+  questionId    String   @unique
+  question      Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  writingContent String @db.Text // HTML content for writing prompt
+
+  @@map("writing_tasks")
+}
+
+// =====================================================
+// SENTENCE_MATCHING
+// =====================================================
+model SentenceMatching {
+  id            String   @id @default(cuid())
+  questionId    String   @unique
+  question      Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  questionContent String @db.Text // Passage with [GAP_A] placeholders
+  gaps          Json // [{ id: "GAP_A", order: "A", text: "Gap A" }]
+  sentences     Json // [{ id: "sent_001", text: "sentence text" }]
+  correctAnswers Json // [{ gapId: "GAP_A", correctSentenceId: "sent_003" }]
+
+  @@map("sentence_matching")
+}
+
+// =====================================================
+// GAP_FILL_DROPDOWN
+// =====================================================
+model GapFillDropdown {
+  id            String   @id @default(cuid())
+  questionId    String   @unique
+  question      Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  questionsContent String @db.Text // Passage with [GAP1] placeholders
+  gaps          Json // [{ id: "GAP1", placeholder: "[GAP1]" }]
+  options       Json // [{ gapId: "GAP1", choices: [{ value: "starting", label: "starting" }] }]
+  correctAnswers Json // [{ gapId: "GAP1", correctValue: "launching" }]
+
+  @@map("gap_fill_dropdown")
+}
+
+// =====================================================
+// USER ATTEMPT (Main Attempt Record)
+// =====================================================
+model UserAttempt {
+  id              Int       @id @default(autoincrement())
+  userId          Int       // WordPress user ID
+  testId          Int
+  attemptNumber   Int       @default(1)
+
+  // Student Info
+  studentName     String    @db.VarChar(255)
+  studentEmail    String?   @db.VarChar(255)
+
+  // Status
+  status          AttemptStatus @default(WELCOME)
+
+  // Timing
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  lastActivityAt  DateTime  @default(now())
+  timeRemaining   Int?      // seconds
+
+  // Progress
+  totalQuestions  Int
+  questionsAnswered Int   @default(0)
+  questionsFlagged Json?   // [5, 12, 23] - question numbers flagged
+
+  // Results
+  totalScore      Int       @default(0)
+  maxPossibleScore Int      @default(0)
+  percentageScore Float     @default(0.0)
+  isPassed        Boolean   @default(false)
+
+  // Metadata
+  ipAddress       String?   @db.VarChar(45)
+  userAgent       String?   @db.Text
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  test            Test      @relation(fields: [testId], references: [id], onDelete: Cascade)
+  answers         UserAnswer[]
+
+  @@unique([userId, testId, attemptNumber])
+  @@index([userId])
+  @@index([status])
+  @@index([testId])
+  @@map("user_attempts")
+}
+
+// =====================================================
+// USER ANSWER
+// =====================================================
+model UserAnswer {
+  id              Int       @id @default(autoincrement())
+  attemptId       Int
+  questionId      String
+  questionNumber  Int
+
+  // Answer Data
+  answerData      Json      // Stores user's answer based on question type
+  // For MCQ: { selectedOptionId: "opt1" }
+  // For Matching: { matches: { "GAP_A": "sent_003" } }
+  // For Gap Fill: { answers: { "GAP1": "launching" } }
+  // For Writing: { essayText: "user written content" }
+
+  // Flagging
+  isFlagged       Boolean   @default(false)
+  flaggedAt       DateTime?
+
+  // Status
+  isAnswered      Boolean   @default(false)
+  isCorrect       Boolean?
+
+  // Timing
+  timeSpent       Int       @default(0) // seconds spent on this question
+  lastUpdatedAt   DateTime  @updatedAt
+
+  // Relations
+  attempt         UserAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question        Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@index([questionId])
+  @@index([isFlagged])
+  @@index([isAnswered])
+  @@map("user_answers")
+}
+

@@ -1,0 +1,378 @@
+{
+  "questions": [
+    {
+      "id": "q1",
+      "questionType": "NORMAL_MCQ",
+      "questionContent": "<div class='poem'><h3>The rechtexteditor content</h3> </div>",
+      "options": [
+        { "id": "opt1", "text": "prepares us for the important last line." },
+        { "id": "opt2", "text": "contrasts with the overall theme." },
+        { "id": "opt3", "text": "actually refers to a person." },
+        { "id": "opt4", "text": "leads us into the poem itself." }
+      ],
+      "correctAnswer": "opt4"
+    },
+    {
+      "id": "q2",
+      "questionType": "EXTRACTS_WITH_MATCHING",
+      "extracts": [
+        {
+          "id": "A",
+          "questionContent": "<div class='poem'><h3>The rechtexteditor content</h3> </div>"
+        },
+        {
+          "id": "B",
+
+          "questionContent": "<div class='poem'><h3>The rechtexteditor content</h3> </div>"
+        },
+        {
+          "id": "C",
+
+          "questionContent": "<div class='poem'><h3>The rechtexteditor content</h3> </div>"
+        },
+        {
+          "id": "D",
+
+          "questionContent": "<div class='poem'><h3>The rechtexteditor content</h3> </div>"
+        }
+      ],
+      "statements": [
+        {
+          "id": "stmt_01",
+          "text": "describes a feeling of awareness of being in a dream?",
+          "correctExtractId": "A"
+        },
+        {
+          "id": "stmt_02",
+          "text": "refers to using dreams as a source of professional inspiration?",
+          "correctExtractId": "B"
+        },
+        {
+          "id": "stmt_03",
+          "text": "mentions being able to do something in a dream that would be impossible in real life?",
+          "correctExtractId": "A"
+        },
+        {
+          "id": "stmt_04",
+          "text": "argues that dreams can teach us something useful?",
+          "correctExtractId": "C"
+        },
+        {
+          "id": "stmt_05",
+          "text": "says that people mostly dream about everyday things?",
+          "correctExtractId": "D"
+        },
+        {
+          "id": "stmt_06",
+          "text": "states that dreams usually lose their power once the person wakes up?",
+          "correctExtractId": "B"
+        },
+        {
+          "id": "stmt_07",
+          "text": "mentions a place that looked different in a dream from its appearance in the writer's memory?",
+          "correctExtractId": "A"
+        },
+        {
+          "id": "stmt_08",
+          "text": "describes how a strange occurrence prevented the writer from doing something?",
+          "correctExtractId": "C"
+        },
+        {
+          "id": "stmt_09",
+          "text": "explains the reason we are willing to accept absurd things in our dreams as significant?",
+          "correctExtractId": "D"
+        },
+        {
+          "id": "stmt_10",
+          "text": "discusses some advice about relaying dreams to others?",
+          "correctExtractId": "B"
+        }
+      ]
+    },
+    {
+      "questionType": "EXTRACTS_WITH_MCQ",
+      "extracts": [
+        {
+          "id": "A",
+          "questionContent": "<div class='poem'><h3>The rechtexteditor content</h3> </div>"
+        },
+        {
+          "id": "B",
+          "questionContent": "<div class='poem'><h3>The rechtexteditor content</h3> </div>"
+        }
+      ],
+      "optionsContent": "<div class='poem'><h3>The rechtexteditor content</h3> </div>",
+      "options": [
+        {
+          "id": "opt_001",
+          "text": "were able to stop and have a snack."
+        },
+        {
+          "id": "opt_002",
+          "text": "saw a spectacular landmark."
+        },
+        {
+          "id": "opt_003",
+          "text": "experienced some discomfort."
+        },
+        {
+          "id": "opt_004",
+          "text": "tried hard to stay awake."
+        }
+      ],
+      "correctAnswer": "opt_003"
+    },
+    {
+      "questionType": "WRITING_TASK",
+      "questionContent": "<div class='poem'><h3>The rechtexteditor content</h3> </div>",
+      "writingContent": "<div class='poem'><h3>The rechtexteditor content</h3> </div>"
+    },
+    {
+      "questionType": "NORMAL_MCQ_WITH_IMAGES",
+      "questionContent": "<div class='poem'><h3>The rechtexteditor content</h3> </div>",
+      "options": [
+        {
+          "id": "opt_001",
+          "imageUrl": "/images/options/option_a.png",
+          "text": "Option A"
+        },
+        {
+          "id": "opt_002",
+          "imageUrl": "/images/options/option_b.png",
+          "text": "Option B"
+        },
+        {
+          "id": "opt_003",
+          "imageUrl": "/images/options/option_c.png",
+          "text": "Option C"
+        },
+        {
+          "id": "opt_004",
+          "imageUrl": "/images/options/option_d.png",
+          "text": "Option D"
+        }
+      ],
+      "correctAnswer": "opt_001"
+    },
+    {
+      "questionType": "SENTENCE_MATCHING",
+      "questionContent": "Plans to create octopus farms in coastal waters round the world have been denounced by an international group of researchers. They say the move is ethically inexcusable and environmentally dangerous, and have called on private companies, academic institutions and governments to block funding for these ventures.\n\nThe researchers say that farming octopuses would require the catching of vast amounts of fish and shellfish to feed them, putting further pressure on the planet's already threatened marine livestock. The group, led by Professor Jennifer Jacquet of New York University, argues that octopuses are highly developed and curious creatures. [GAP_A] . 'We can see no reason why, in the 21st century, a sophisticated, complex animal should become the source of mass-produced food,' says Jacquet. 'Octopuses eat fish and shellfish, and supplying enough to feed large numbers of them puts further pressure on the food chain. It is unsustainable. Octopus factory farming is ethically and ecologically unjustified.'\n\nThere are about 300 species of octopus and many behave in surprisingly sophisticated ways. In tests, some have been shown to use tools, for example. [GAP_B] . 'Once octopuses have solved a problem, they retain a long-term memory of the solution,' the researchers state in a paper in *Issues in Science and Technology*.\n\nOctopuses are also a culinary delicacy. About 350,000 tonnes are caught every year and served in restaurants from Spain to Chile and from Mexico to Australia. However, numbers of octopus caught are reported to be in decline. [GAP_C] . Wild-caught males and females are allowed to mate. Then their fertile eggs hatch out in containers and are grown into adults to be sold to markets round the globe.\n\n[GAP_D] . This has made feeding them difficult and expensive. Keeping young animals in water whose salinity and temperature is carefully controlled has also proved tricky. These drawbacks have prevented octopus from the sentenceless below the one which fits each gap.",
+      "gaps": [
+        {
+          "id": "GAP_A",
+          "order": "A",
+          "text": "Gap A"
+        },
+        {
+          "id": "GAP_B",
+          "order": "B",
+          "text": "Gap B"
+        },
+        {
+          "id": "GAP_C",
+          "order": "C",
+          "text": "Gap C"
+        },
+        {
+          "id": "GAP_D",
+          "order": "D",
+          "text": "Gap D"
+        }
+      ],
+      "sentences": [
+        {
+          "id": "sent_001",
+          "text": "Fish farmers have turned to the rearing of octopuses to try to replace these dwindling catches."
+        },
+        {
+          "id": "sent_002",
+          "text": "But might this actually be the best way to protect the species over the long term?"
+        },
+        {
+          "id": "sent_003",
+          "text": "Farming them intensively would probably cause large numbers of deaths from stress."
+        },
+        {
+          "id": "sent_004",
+          "text": "In one such experiment, scientists observed octopuses building shelters from pieces of coconut shell."
+        },
+        {
+          "id": "sent_005",
+          "text": "These efforts have foundered, however, because octopus larvae eat only live food."
+        }
+      ],
+      "correctAnswers": [
+        {
+          "gapId": "GAP_A",
+          "correctSentenceId": "sent_003"
+        },
+        {
+          "gapId": "GAP_B",
+          "correctSentenceId": "sent_004"
+        },
+        {
+          "gapId": "GAP_C",
+          "correctSentenceId": "sent_001"
+        },
+        {
+          "gapId": "GAP_D",
+          "correctSentenceId": "sent_005"
+        }
+      ]
+    },
+    {
+      "questionType": "GAP_FILL_DROPDOWN",
+
+      "questionsContent": "When 60 cyclists set off from a café near Paris on a July day in 1903, little did they imagine they were [GAP1] one of the world's great sporting competitions. That initial race was an incredible test of endurance, featuring one stage of 467 kilometres, which had to be ridden non-stop, day and night. Under the [GAP2] of darkness, however, plenty of cheating went on; to curb that, the rules were changed to daylight-only riding from 1904 onwards.\n\nThe early bikes would seem extremely heavy to any of the cycling elite today who compete for the [GAP3] yellow jersey that [GAP4] the overall race leader. It may be hard to [GAP5], but the first winner's bike actually had no brakes! He simply put his foot against the rim of the wheel and hoped that friction would slow him down. There are iconic pictures of early riders with spare  inner tyres [GAP6] around their shoulders, whereas nowadays team mechanics think nothing of changing a wheel in a [GAP7] of seconds. And whereas early  riders relied on [GAP8] amounts of water, today's riders benefit from all  manner of protein drinks.",
+
+      "gaps": [
+        {
+          "id": "GAP1",
+          "placeholder": "[GAP1]"
+        },
+        {
+          "id": "GAP2",
+          "placeholder": "[GAP2]"
+        },
+        {
+          "id": "GAP3",
+
+          "placeholder": "[GAP3]"
+        },
+        {
+          "id": "GAP4",
+
+          "placeholder": "[GAP4]"
+        },
+        {
+          "id": "GAP5",
+
+          "placeholder": "[GAP5]"
+        },
+        {
+          "id": "GAP6",
+
+          "placeholder": "[GAP6]"
+        },
+        {
+          "id": "GAP7",
+
+          "placeholder": "[GAP7]"
+        },
+        {
+          "id": "GAP8",
+
+          "placeholder": "[GAP8]"
+        }
+      ],
+      "options": [
+        {
+          "gapId": "GAP1",
+          "choices": [
+            { "value": "starting", "label": "starting" },
+            { "value": "beginning", "label": "beginning" },
+            { "value": "launching", "label": "launching" },
+            { "value": "founding", "label": "founding" }
+          ]
+        },
+        {
+          "gapId": "GAP2",
+          "choices": [
+            { "value": "cover", "label": "cover" },
+            { "value": "veil", "label": "veil" },
+            { "value": "shadow", "label": "shadow" },
+            { "value": "blanket", "label": "blanket" }
+          ]
+        },
+        {
+          "gapId": "GAP3",
+          "choices": [
+            { "value": "famous", "label": "famous" },
+            { "value": "legendary", "label": "legendary" },
+            { "value": "celebrated", "label": "celebrated" },
+            { "value": "coveted", "label": "coveted" }
+          ]
+        },
+        {
+          "gapId": "GAP4",
+          "choices": [
+            { "value": "marks", "label": "marks" },
+            { "value": "signals", "label": "signals" },
+            { "value": "designates", "label": "designates" },
+            { "value": "indicates", "label": "indicates" }
+          ]
+        },
+        {
+          "gapId": "GAP5",
+          "choices": [
+            { "value": "believe", "label": "believe" },
+            { "value": "accept", "label": "accept" },
+            { "value": "credit", "label": "credit" },
+            { "value": "imagine", "label": "imagine" }
+          ]
+        },
+        {
+          "gapId": "GAP6",
+          "choices": [
+            { "value": "wrapped", "label": "wrapped" },
+            { "value": "tied", "label": "tied" },
+            { "value": "slung", "label": "slung" },
+            { "value": "hung", "label": "hung" }
+          ]
+        },
+        {
+          "gapId": "GAP7",
+          "choices": [
+            { "value": "few", "label": "few" },
+            { "value": "couple", "label": "couple" },
+            { "value": "handful", "label": "handful" },
+            { "value": "matter", "label": "matter" }
+          ]
+        },
+        {
+          "gapId": "GAP8",
+          "choices": [
+            { "value": "small", "label": "small" },
+            { "value": "limited", "label": "limited" },
+            { "value": "meager", "label": "meager" },
+            { "value": "modest", "label": "modest" }
+          ]
+        }
+      ],
+      "correctAnswers": [
+        {
+          "gapId": "GAP1",
+          "correctValue": "launching"
+        },
+        {
+          "gapId": "GAP2",
+          "correctValue": "cover"
+        },
+        {
+          "gapId": "GAP3",
+          "correctValue": "coveted"
+        },
+        {
+          "gapId": "GAP4",
+          "correctValue": "designates"
+        },
+        {
+          "gapId": "GAP5",
+          "correctValue": "believe"
+        },
+        {
+          "gapId": "GAP6",
+          "correctValue": "slung"
+        },
+        {
+          "gapId": "GAP7",
+          "correctValue": "matter"
+        },
+        {
+          "gapId": "GAP8",
+          "correctValue": "modest"
+        }
+      ]
+    }
+  ]
+}
