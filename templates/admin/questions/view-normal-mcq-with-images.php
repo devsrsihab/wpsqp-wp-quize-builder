@@ -1,47 +1,37 @@
 <?php
 if (!defined('ABSPATH')) exit;
 
-/**
- * View template for EXTRACTS_WITH_MCQ question type
- * 
- * @param object $question - Main question data
- * @param object $type_data - Type-specific data (already decoded)
- */
-
 // Debug: Log that template is loading
-error_log('=== view-extracts-with-mcq.php is LOADING ===');
+error_log('=== view-normal-mcq-with-images.php is LOADING ===');
 error_log('Question ID: ' . ($question->id ?? 'not set'));
 error_log('Question Type: ' . ($question->question_type ?? 'not set'));
 
-// Data is already decoded from AJAX, no need to json_decode again
-$extracts = isset($type_data->extracts) ? $type_data->extracts : [];
-$options_content = isset($type_data->options_content) ? $type_data->options_content : '';
-$options = isset($type_data->options) ? $type_data->options : [];
-$correct_answer = isset($type_data->correct_answer) ? $type_data->correct_answer : '';
+// Decode options if they are JSON string
+$options = [];
+$correct_answer = '';
 
-// If extracts is still a string, then decode it
-if (is_string($extracts)) {
-    $extracts = json_decode($extracts, true) ?: [];
+if ($type_data) {
+    $options_raw = isset($type_data->options) ? $type_data->options : [];
+    if (is_string($options_raw)) {
+        $options = json_decode($options_raw, true) ?: [];
+    } else {
+        $options = is_array($options_raw) ? $options_raw : [];
+    }
+    $correct_answer = isset($type_data->correct_answer) ? $type_data->correct_answer : '';
 }
 
-// If options is still a string, then decode it
-if (is_string($options)) {
-    $options = json_decode($options, true) ?: [];
-}
+error_log('Options count: ' . count($options));
+error_log('Correct answer (stored as ID): ' . $correct_answer);
 
-// Ensure arrays
-$extracts = is_array($extracts) ? $extracts : [];
+// Ensure options array
 $options = is_array($options) ? $options : [];
 
 // Get question content - fix escape characters
 $question_content = isset($question->question_content) ? stripslashes($question->question_content) : '';
-
-error_log('Extracts count: ' . count($extracts));
-error_log('Options count: ' . count($options));
-error_log('Correct answer (stored as ID): ' . $correct_answer);
 ?>
 
-<div class="wpsqp-view-extracts-mcq">
+<div class="wpsqp-view-normal-mcq-images">
+    
     <!-- Question Header -->
     <div class="view-section question-header">
         <div class="section-title">
@@ -53,97 +43,59 @@ error_log('Correct answer (stored as ID): ' . $correct_answer);
         </div>
     </div>
 
-    <!-- Extracts Section -->
-    <?php if (!empty($extracts)): ?>
-    <div class="view-section extracts-section">
-        <div class="section-title">
-            <span class="dashicons dashicons-media-document"></span>
-            <h3><?php _e('Extracts', 'wpsqptxd'); ?> <span class="extract-count">(<?php echo count($extracts); ?>)</span></h3>
-        </div>
-        
-        <div class="extracts-tabs">
-            <div class="extracts-tabs-nav">
-                <?php foreach ($extracts as $index => $extract): 
-                    $extract_id = is_array($extract) ? ($extract['id'] ?? chr(65 + $index)) : chr(65 + $index);
-                ?>
-                <button type="button" class="extract-tab-btn <?php echo $index === 0 ? 'active' : ''; ?>" 
-                        data-tab="extract-<?php echo $index; ?>">
-                    Extract <?php echo $extract_id; ?>
-                </button>
-                <?php endforeach; ?>
-            </div>
-            
-            <div class="extracts-tabs-content">
-                <?php foreach ($extracts as $index => $extract): 
-                    $content = is_array($extract) ? ($extract['content'] ?? '') : '';
-                ?>
-                <div class="extract-tab-pane <?php echo $index === 0 ? 'active' : ''; ?>" 
-                     id="extract-<?php echo $index; ?>">
-                    <div class="extract-content">
-                        <?php echo wp_kses_post($content); ?>
-                    </div>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Options Content Section -->
-    <?php if (!empty($options_content)): ?>
-    <div class="view-section options-content-section">
-        <div class="section-title">
-            <span class="dashicons dashicons-editor-help"></span>
-            <h3><?php _e('Instructions', 'wpsqptxd'); ?></h3>
-        </div>
-        <div class="section-content options-content">
-            <?php echo wp_kses_post($options_content); ?>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Options Section -->
-    <?php if (!empty($options)): ?>
+    <!-- Options Section with Images -->
     <div class="view-section options-section">
         <div class="section-title">
             <span class="dashicons dashicons-yes-alt"></span>
             <h3><?php _e('Answer Options', 'wpsqptxd'); ?></h3>
         </div>
         
-        <div class="options-list">
-            <?php foreach ($options as $index => $option): 
-                $letter = chr(65 + $index);
+        <?php if (!empty($options)): ?>
+        <div class="options-grid">
+            <?php foreach ($options as $index => $option):
                 $option_id = is_array($option) ? ($option['id'] ?? '') : '';
                 $option_text = is_array($option) ? ($option['text'] ?? '') : '';
+                $option_image = is_array($option) ? ($option['image'] ?? '') : '';
                 $is_correct = ($option_id === $correct_answer);
+                $letter = chr(65 + $index);
             ?>
-            <div class="option-item <?php echo $is_correct ? 'correct-option' : ''; ?>">
-                <div class="option-marker">
-                    <span class="option-letter"><?php echo $letter; ?>.</span>
+            <div class="option-card <?php echo $is_correct ? 'correct-option' : ''; ?>">
+                <div class="option-badge">
+                    <span class="option-letter"><?php echo $letter; ?></span>
                     <?php if ($is_correct): ?>
                     <span class="correct-badge" title="<?php _e('Correct Answer', 'wpsqptxd'); ?>">
                         <span class="dashicons dashicons-yes-alt"></span>
                     </span>
                     <?php endif; ?>
                 </div>
+                
+                <?php if (!empty($option_image)): ?>
+                <div class="option-image">
+                    <img src="<?php echo esc_url($option_image); ?>" alt="<?php echo esc_attr($option_text); ?>">
+                </div>
+                <?php else: ?>
+                <div class="option-image-placeholder">
+                    <span class="dashicons dashicons-format-image"></span>
+                </div>
+                <?php endif; ?>
+                
                 <div class="option-text">
                     <?php echo esc_html($option_text); ?>
                     <?php if ($is_correct): ?>
                     <span class="correct-label">(<?php _e('Correct', 'wpsqptxd'); ?>)</span>
                     <?php endif; ?>
                 </div>
-                <?php if ($is_correct): ?>
-                <div class="option-corner-badge">
-                    <span class="dashicons dashicons-awards"></span>
-                </div>
-                <?php endif; ?>
             </div>
             <?php endforeach; ?>
         </div>
+        <?php else: ?>
+        <div class="section-content">
+            <p class="no-options-message"><?php _e('No options found for this question.', 'wpsqptxd'); ?></p>
+        </div>
+        <?php endif; ?>
     </div>
-    <?php endif; ?>
 
-    <!-- Metadata Section - Complete like NORMAL_MCQ -->
+    <!-- Metadata Section - Same as NORMAL_MCQ -->
     <div class="view-section metadata-section">
         <div class="section-title">
             <span class="dashicons dashicons-admin-generic"></span>
@@ -160,10 +112,6 @@ error_log('Correct answer (stored as ID): ' . $correct_answer);
                 <span class="metadata-value type-badge">
                     <?php echo isset($question->question_type) ? str_replace('_', ' ', $question->question_type) : ''; ?>
                 </span>
-            </div>
-            <div class="metadata-item">
-                <span class="metadata-label"><?php _e('Total Extracts:', 'wpsqptxd'); ?></span>
-                <span class="metadata-value"><?php echo count($extracts); ?></span>
             </div>
             <div class="metadata-item">
                 <span class="metadata-label"><?php _e('Total Options:', 'wpsqptxd'); ?></span>
@@ -210,9 +158,9 @@ error_log('Correct answer (stored as ID): ' . $correct_answer);
 
 <style>
 /* =====================================================
-   EXTRACTS WITH MCQ View Template Styles
+   NORMAL MCQ WITH IMAGES View Template Styles
    ===================================================== */
-.wpsqp-view-extracts-mcq {
+.wpsqp-view-normal-mcq-images {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     max-width: 100%;
     line-height: 1.5;
@@ -281,109 +229,52 @@ error_log('Correct answer (stored as ID): ' . $correct_answer);
     margin-bottom: 0;
 }
 
-/* Extracts Tabs */
-.extracts-tabs {
-    border: none;
-}
-
-.extracts-tabs-nav {
-    display: flex;
-    border-bottom: 1px solid #e2e4e7;
-    background: #f1f1f1;
-    padding: 0;
-    overflow-x: auto;
-}
-
-.extract-tab-btn {
-    padding: 10px 20px;
-    border: none;
-    background: none;
-    border-right: 1px solid #e2e4e7;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    color: #555;
-    white-space: nowrap;
-}
-
-.extract-tab-btn:hover {
-    background: #e5e5e5;
-}
-
-.extract-tab-btn.active {
-    background: #fff;
-    color: #2271b1;
-    border-bottom: 2px solid #2271b1;
-}
-
-.extracts-tabs-content {
+/* Options Grid */
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
     padding: 20px;
 }
 
-.extract-tab-pane {
-    display: none;
-}
-
-.extract-tab-pane.active {
-    display: block;
-}
-
-.extract-content {
-    line-height: 1.6;
-    font-size: 14px;
-}
-
-/* Options Content */
-.options-content {
-    background: #fff3e0;
-    border-left: 4px solid #ffb900;
-    font-style: italic;
-}
-
-/* Options List */
-.options-list {
-    padding: 12px 16px;
-}
-
-.option-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 18px;
-    margin: 8px 0;
+/* Option Card */
+.option-card {
     background: #fafbfc;
     border: 1px solid #e9ecef;
-    border-radius: 10px;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
     transition: all 0.2s ease;
     position: relative;
 }
 
-.option-item:hover {
+.option-card:hover {
     background: #f8f9fa;
     border-color: #cbd5e0;
-    transform: translateX(2px);
+    transform: translateY(-2px);
 }
 
-.option-item.correct-option {
+.option-card.correct-option {
     background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
     border-color: #81c784;
     box-shadow: 0 2px 8px rgba(76, 175, 80, 0.15);
 }
 
-.option-marker {
+/* Option Badge */
+.option-badge {
     display: flex;
     align-items: center;
-    gap: 6px;
-    min-width: 48px;
+    justify-content: space-between;
+    margin-bottom: 12px;
 }
 
 .option-letter {
     font-weight: 700;
-    font-size: 16px;
+    font-size: 18px;
     color: #2271b1;
     background: #fff;
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -398,23 +289,52 @@ error_log('Correct answer (stored as ID): ' . $correct_answer);
     color: #fff;
 }
 
-.correct-badge {
-    display: inline-flex;
+.correct-badge .dashicons {
+    color: #4caf50;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+/* Option Image */
+.option-image {
+    margin: 12px 0;
+    min-height: 80px;
+    display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.correct-badge .dashicons {
-    color: #4caf50;
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
+.option-image img {
+    max-width: 100%;
+    max-height: 120px;
+    border-radius: 8px;
+    object-fit: contain;
 }
 
+.option-image-placeholder {
+    margin: 12px 0;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f1f1;
+    border-radius: 8px;
+    color: #999;
+}
+
+.option-image-placeholder .dashicons {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    opacity: 0.5;
+}
+
+/* Option Text */
 .option-text {
-    flex: 1;
     font-size: 14px;
     color: #2c3338;
+    margin-top: 8px;
     line-height: 1.5;
 }
 
@@ -425,27 +345,13 @@ error_log('Correct answer (stored as ID): ' . $correct_answer);
 
 .correct-label {
     color: #4caf50;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
-    margin-left: 8px;
+    margin-left: 5px;
     background: rgba(76, 175, 80, 0.1);
-    padding: 2px 8px;
-    border-radius: 20px;
-}
-
-.option-corner-badge {
-    position: absolute;
-    right: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    opacity: 0.6;
-}
-
-.option-corner-badge .dashicons {
-    color: #4caf50;
-    font-size: 24px;
-    width: 24px;
-    height: 24px;
+    padding: 2px 6px;
+    border-radius: 12px;
+    display: inline-block;
 }
 
 /* Metadata Section */
@@ -498,13 +404,6 @@ error_log('Correct answer (stored as ID): ' . $correct_answer);
     text-transform: uppercase;
 }
 
-.extract-count {
-    font-size: 12px;
-    font-weight: normal;
-    color: #666;
-    margin-left: 5px;
-}
-
 /* No Options Message */
 .no-options-message {
     color: #6c757d;
@@ -515,25 +414,26 @@ error_log('Correct answer (stored as ID): ' . $correct_answer);
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .options-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 16px;
+    }
+    
     .metadata-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
         padding: 16px;
     }
     
-    .option-item {
-        padding: 12px 14px;
-        gap: 10px;
+    .option-card {
+        padding: 14px;
     }
     
     .option-letter {
-        width: 28px;
-        height: 28px;
-        font-size: 14px;
-    }
-    
-    .option-text {
-        font-size: 13px;
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
     }
     
     .section-title {
@@ -547,11 +447,6 @@ error_log('Correct answer (stored as ID): ' . $correct_answer);
     .question-content {
         max-height: 300px;
     }
-    
-    .extract-tab-btn {
-        padding: 8px 12px;
-        font-size: 12px;
-    }
 }
 
 @media (max-width: 480px) {
@@ -559,24 +454,18 @@ error_log('Correct answer (stored as ID): ' . $correct_answer);
         grid-template-columns: 1fr;
     }
     
-    .option-item {
-        flex-wrap: wrap;
+    .option-card {
         padding: 12px;
     }
     
-    .option-marker {
-        width: 100%;
-        margin-bottom: 8px;
+    .option-letter {
+        width: 28px;
+        height: 28px;
+        font-size: 14px;
     }
     
-    .option-corner-badge {
-        display: none;
-    }
-    
-    .correct-label {
-        display: inline-block;
-        margin-left: 0;
-        margin-top: 4px;
+    .option-text {
+        font-size: 13px;
     }
     
     .section-title h3 {
@@ -602,7 +491,7 @@ error_log('Correct answer (stored as ID): ' . $correct_answer);
     }
 }
 
-.option-item.correct-option {
+.option-card.correct-option {
     animation: pulse-green 0.6s ease;
 }
 
@@ -625,18 +514,3 @@ error_log('Correct answer (stored as ID): ' . $correct_answer);
     background: #a8a8a8;
 }
 </style>
-
-<script>
-jQuery(document).ready(function($) {
-    // Extract tabs functionality
-    $('.extract-tab-btn').on('click', function() {
-        let tabId = $(this).data('tab');
-        
-        $('.extract-tab-btn').removeClass('active');
-        $(this).addClass('active');
-        
-        $('.extract-tab-pane').removeClass('active');
-        $('#' + tabId).addClass('active');
-    });
-});
-</script>

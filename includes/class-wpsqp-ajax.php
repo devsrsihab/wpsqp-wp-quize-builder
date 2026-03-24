@@ -12,6 +12,7 @@ class WPSQP_Ajax {
             'wpsqp_delete_question'    => ['logged_in' => true, 'capability' => 'manage_options'],
             'wpsqp_get_question_data'  => ['logged_in' => true, 'capability' => 'manage_options'],
             'wpsqp_load_view_template' => ['logged_in' => true, 'capability' => 'manage_options'],
+            'wpsqp_get_question_with_view'     => ['logged_in' => true, 'capability' => 'manage_options'],
         ];
         
         foreach ($ajax_handlers as $handler => $args) {
@@ -100,6 +101,40 @@ class WPSQP_Ajax {
     }
 
     /**
+     * Save question type specific data
+     */
+    private static function saveQuestionTypeData($table_prefix, $question_id, $type, $data) {
+        error_log('Saving type-specific data for: ' . $type);
+        
+        switch ($type) {
+            case 'NORMAL_MCQ':
+                self::saveNormalMCQ($table_prefix, $question_id, $data);
+                break;
+            case 'NORMAL_MCQ_WITH_IMAGES':
+                self::saveNormalMCQWithImages($table_prefix, $question_id, $data);
+                break;
+            case 'EXTRACTS_WITH_MCQ':
+                self::saveExtractsWithMCQ($table_prefix, $question_id, $data);
+                break;
+            case 'EXTRACTS_WITH_MATCHING':
+                self::saveExtractsWithMatching($table_prefix, $question_id, $data);
+                break;
+            case 'WRITING_TASK':
+                self::saveWritingTask($table_prefix, $question_id, $data);
+                break;
+            case 'SENTENCE_MATCHING':
+                self::saveSentenceMatching($table_prefix, $question_id, $data);
+                break;
+            case 'GAP_FILL_DROPDOWN':
+                self::saveGapFillDropdown($table_prefix, $question_id, $data);
+                break;
+            default:
+                error_log('Unknown question type: ' . $type);
+                throw new Exception('Unknown question type: ' . $type);
+        }
+    }
+
+    /**
      * Load view template for question type
      */
     public static function wpsqp_load_view_template() {
@@ -174,38 +209,61 @@ class WPSQP_Ajax {
     }
         
     /**
-     * Save question type specific data
+     * Save NORMAL_MCQ_WITH_IMAGES specific data
      */
-    private static function saveQuestionTypeData($table_prefix, $question_id, $type, $data) {
-        error_log('Saving type-specific data for: ' . $type);
-        
-        switch ($type) {
-            case 'NORMAL_MCQ':
-                self::saveNormalMCQ($table_prefix, $question_id, $data);
-                break;
-            case 'NORMAL_MCQ_WITH_IMAGES':
-                self::saveNormalMCQWithImages($table_prefix, $question_id, $data);
-                break;
-            case 'EXTRACTS_WITH_MCQ':
-                self::saveExtractsWithMCQ($table_prefix, $question_id, $data);
-                break;
-            case 'EXTRACTS_WITH_MATCHING':
-                self::saveExtractsWithMatching($table_prefix, $question_id, $data);
-                break;
-            case 'WRITING_TASK':
-                self::saveWritingTask($table_prefix, $question_id, $data);
-                break;
-            case 'SENTENCE_MATCHING':
-                self::saveSentenceMatching($table_prefix, $question_id, $data);
-                break;
-            case 'GAP_FILL_DROPDOWN':
-                self::saveGapFillDropdown($table_prefix, $question_id, $data);
-                break;
-            default:
-                error_log('Unknown question type: ' . $type);
-                throw new Exception('Unknown question type: ' . $type);
-        }
+    private static function saveNormalMCQWithImages($table_prefix, $question_id, $data) {
+            global $wpdb;
+            
+            error_log('=== saveNormalMCQWithImages called ===');
+            
+            $options = [];
+            
+            // Get correct answer ID from radio button
+            $correct_answer = isset($data['correct_answer']) ? sanitize_text_field($data['correct_answer']) : '';
+            error_log('Correct answer from form: ' . $correct_answer);
+            
+            if (isset($data['options']) && is_array($data['options'])) {
+                foreach ($data['options'] as $index => $option) {
+                    $option_id = isset($option['id']) ? sanitize_text_field($option['id']) : 'opt_' . ($index + 1);
+                    $option_text = isset($option['text']) ? sanitize_text_field($option['text']) : '';
+                    $option_image = isset($option['image']) ? esc_url_raw($option['image']) : '';
+                    
+                    $options[] = [
+                        'id'    => $option_id,
+                        'text'  => $option_text,
+                        'image' => $option_image,
+                    ];
+                    
+                    error_log('Option ' . $index . ': ID=' . $option_id . ', Image=' . $option_image);
+                }
+            }
+            
+            $type_data = [
+                'id'             => uniqid('nmcqi_'),
+                'question_id'    => $question_id,
+                'options'        => json_encode($options, JSON_UNESCAPED_UNICODE),
+                'correct_answer' => $correct_answer,
+            ];
+            
+            error_log('Saving data: ' . print_r($type_data, true));
+            
+            $existing = $wpdb->get_var($wpdb->prepare(
+                "SELECT id FROM {$table_prefix}normal_mcq_images WHERE question_id = %s",
+                $question_id
+            ));
+            
+            if ($existing) {
+                unset($type_data['id']);
+                $wpdb->update($table_prefix . 'normal_mcq_images', $type_data, ['question_id' => $question_id]);
+                error_log('Updated existing record');
+            } else {
+                $wpdb->insert($table_prefix . 'normal_mcq_images', $type_data);
+                error_log('Inserted new record');
+            }
+            
+            error_log('saveNormalMCQWithImages completed');
     }
+
 
     /**
      * Save NORMAL_MCQ specific data
@@ -214,34 +272,35 @@ class WPSQP_Ajax {
         global $wpdb;
         
         error_log('=== saveNormalMCQ called ===');
-        error_log('Raw data: ' . print_r($data, true));
         
         $options = [];
         
-        // Get correct answer from radio button value (should be option index)
+        // Get correct answer from radio button (this is the index)
         $correct_answer_index = isset($data['correct_answer']) ? $data['correct_answer'] : '';
         error_log('Correct answer index from form: ' . $correct_answer_index);
         
         if (isset($data['options']) && is_array($data['options'])) {
             foreach ($data['options'] as $index => $option) {
                 // Generate option ID based on index (opt_1, opt_2, etc.)
-                $option_id = 'opt_' . ($index + 1);
+                $option_id = isset($option['id']) ? sanitize_text_field($option['id']) : 'opt_' . ($index + 1);
+                $option_text = isset($option['text']) ? sanitize_text_field($option['text']) : '';
                 
                 $options[] = [
                     'id'   => $option_id,
-                    'text' => sanitize_text_field($option['text']),
-                    // No isCorrect field here - we'll use separate correct_answer field
+                    'text' => $option_text,
                 ];
                 
-                error_log('Option ' . $index . ': ID=' . $option_id . ', Text=' . $option['text']);
+                error_log('Option ' . $index . ': ID=' . $option_id . ', Text=' . $option_text);
             }
         }
         
-        // Determine which option is correct based on the index
+        // Determine which option is correct based on the index from form
         $correct_answer_id = '';
-        if ($correct_answer_index !== '' && isset($options[$correct_answer_index])) {
-            $correct_answer_id = $options[$correct_answer_index]['id'];
+        if ($correct_answer_index !== '' && isset($options[(int)$correct_answer_index])) {
+            $correct_answer_id = $options[(int)$correct_answer_index]['id'];
             error_log('Setting correct_answer to: ' . $correct_answer_id . ' (from index ' . $correct_answer_index . ')');
+        } else {
+            error_log('WARNING: Could not find correct answer! Index: ' . $correct_answer_index);
         }
         
         $type_data = [
@@ -251,7 +310,7 @@ class WPSQP_Ajax {
             'correct_answer' => $correct_answer_id,
         ];
         
-        error_log('Final type_data: ' . print_r($type_data, true));
+        error_log('Final type_data to save: ' . print_r($type_data, true));
         
         $existing = $wpdb->get_var($wpdb->prepare(
             "SELECT id FROM {$table_prefix}normal_mcq WHERE question_id = %s",
@@ -259,56 +318,19 @@ class WPSQP_Ajax {
         ));
         
         if ($existing) {
+            error_log('Updating existing record for question: ' . $question_id);
             unset($type_data['id']);
-            error_log('Updating existing record');
-            $wpdb->update($table_prefix . 'normal_mcq', $type_data, ['question_id' => $question_id]);
+            $result = $wpdb->update($table_prefix . 'normal_mcq', $type_data, ['question_id' => $question_id]);
+            error_log('Update result: ' . ($result !== false ? 'success' : 'failed - ' . $wpdb->last_error));
         } else {
-            error_log('Inserting new record');
-            $wpdb->insert($table_prefix . 'normal_mcq', $type_data);
+            error_log('Inserting new record for question: ' . $question_id);
+            $result = $wpdb->insert($table_prefix . 'normal_mcq', $type_data);
+            error_log('Insert result: ' . ($result ? 'success, ID: ' . $wpdb->insert_id : 'failed - ' . $wpdb->last_error));
         }
         
         error_log('saveNormalMCQ completed');
     }
-    
-    /**
-     * Save NORMAL_MCQ_WITH_IMAGES specific data
-     */
-    private static function saveNormalMCQWithImages($table_prefix, $question_id, $data) {
-        global $wpdb;
 
-        $options = [];
-        if (isset($data['options']) && is_array($data['options'])) {
-            foreach ($data['options'] as $index => $option) {
-                $options[] = [
-                    'id'        => isset($option['id']) ? sanitize_text_field($option['id']) : 'opt_' . ($index + 1),
-                    'imageUrl'  => isset($option['imageUrl']) ? esc_url_raw($option['imageUrl']) : '',
-                    'text'      => sanitize_text_field($option['text']),
-                    'isCorrect' => isset($data['correct_answer']) && (string)$data['correct_answer'] === (string)$index,
-                ];
-            }
-        }
-        
-        $correct_answer = isset($data['correct_answer']) ? sanitize_text_field($data['correct_answer']) : '';
-        
-        $type_data = [
-            'id'             => uniqid('nmcqi_'),
-            'question_id'    => $question_id,
-            'options'        => json_encode($options),
-            'correct_answer' => $correct_answer,
-        ];
-        
-        $existing = $wpdb->get_var($wpdb->prepare(
-            "SELECT id FROM {$table_prefix}normal_mcq_images WHERE question_id = %s",
-            $question_id
-        ));
-        
-        if ($existing) {
-            unset($type_data['id']);
-            $wpdb->update($table_prefix . 'normal_mcq_images', $type_data, ['question_id' => $question_id]);
-        } else {
-            $wpdb->insert($table_prefix . 'normal_mcq_images', $type_data);
-        }
-    }
 
     /**
      * Save EXTRACTS_WITH_MCQ specific data
@@ -861,7 +883,117 @@ class WPSQP_Ajax {
 
 
 
-
+    /**
+     * Get question with view template - OPTIMIZED single AJAX call
+     */
+    public static function wpsqp_get_question_with_view() {
+        error_log('=== wpsqp_get_question_with_view called ===');
+        
+        $start_time = microtime(true);
+        
+        // Verify nonce
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'wpsqp_question_nonce')) {
+            wp_send_json_error('Security check failed');
+        }
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Insufficient permissions');
+        }
+        
+        global $wpdb;
+        $table_prefix = $wpdb->prefix . 'wpsqp_';
+        
+        $id = isset($_POST['id']) ? sanitize_text_field($_POST['id']) : '';
+        
+        if (empty($id)) {
+            wp_send_json_error('Invalid question ID');
+        }
+        
+        // Get question data
+        $question = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM {$table_prefix}questions WHERE id = %s",
+            $id
+        ));
+        
+        if (!$question) {
+            wp_send_json_error('Question not found');
+        }
+        
+        // Load type-specific data
+        $type_data = null;
+        switch ($question->question_type) {
+            case 'NORMAL_MCQ':
+                $type_data = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$table_prefix}normal_mcq WHERE question_id = %s",
+                    $id
+                ));
+                if ($type_data && is_string($type_data->options)) {
+                    $type_data->options = json_decode($type_data->options, true);
+                }
+                break;
+                
+            case 'NORMAL_MCQ_WITH_IMAGES':
+                $type_data = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$table_prefix}normal_mcq_images WHERE question_id = %s",
+                    $id
+                ));
+                if ($type_data && is_string($type_data->options)) {
+                    $type_data->options = json_decode($type_data->options, true);
+                }
+                break;
+                
+            case 'EXTRACTS_WITH_MCQ':
+                $type_data = $wpdb->get_row($wpdb->prepare(
+                    "SELECT * FROM {$table_prefix}extracts_mcq WHERE question_id = %s",
+                    $id
+                ));
+                if ($type_data) {
+                    if (is_string($type_data->extracts)) {
+                        $type_data->extracts = json_decode($type_data->extracts, true);
+                    }
+                    if (is_string($type_data->options)) {
+                        $type_data->options = json_decode($type_data->options, true);
+                    }
+                }
+                break;
+                
+            // Add other question types as needed
+            default:
+                // Try to load generic view
+                break;
+        }
+        
+        // Get view template
+        $type_lower = strtolower(str_replace('_', '-', $question->question_type));
+        $view_template = WPSQP_PLUGIN_DIR . 'templates/admin/questions/view-' . $type_lower . '.php';
+        
+        // If specific template not found, use generic
+        if (!file_exists($view_template)) {
+            $view_template = WPSQP_PLUGIN_DIR . 'templates/admin/questions/view-generic.php';
+        }
+        
+        ob_start();
+        if (file_exists($view_template)) {
+            include $view_template;
+        } else {
+            // Ultimate fallback
+            echo '<div class="fallback-view">';
+            echo '<h4>Question Content</h4>';
+            echo '<div class="question-content">' . wp_kses_post($question->question_content) . '</div>';
+            echo '<h4>Question Data</h4>';
+            echo '<pre>' . print_r($type_data, true) . '</pre>';
+            echo '</div>';
+        }
+        $html = ob_get_clean();
+        
+        $load_time = round((microtime(true) - $start_time) * 1000, 2);
+        error_log('View loaded in: ' . $load_time . 'ms');
+        
+        wp_send_json_success([
+            'html' => $html,
+            'load_time' => $load_time . 'ms'
+        ]);
+    }
 
 
 

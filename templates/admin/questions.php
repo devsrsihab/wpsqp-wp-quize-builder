@@ -209,7 +209,7 @@ jQuery(document).ready(function($) {
 
 
 <!-- Update the JavaScript for view button -->
-<script>
+<!-- <script>
 jQuery(document).ready(function($) {
     let currentQuestionId = null;
 
@@ -316,6 +316,121 @@ jQuery(document).ready(function($) {
             },
             success: function(response) {
                 if (response.success) {
+                    location.reload();
+                } else {
+                    alert(response.data);
+                }
+            },
+            error: function() {
+                alert('<?php _e('Error deleting question', 'wpsqptxd'); ?>');
+            }
+        });
+    });
+
+    // Modal close handlers
+    $('.modal-close, .modal-overlay').on('click', function() {
+        $('#view-question-modal').fadeOut(200);
+        $('#delete-question-modal').fadeOut(200);
+        $('#question-type-modal').fadeOut(200);
+    });
+});
+</script> -->
+
+
+
+<script>
+jQuery(document).ready(function($) {
+    let currentQuestionId = null;
+    // ✅ Cache for already loaded questions - prevents multiple AJAX calls
+    let questionCache = {};
+
+    // Add new question button
+    $('.add-new-question-btn').on('click', function() {
+        $('#question-type-modal').fadeIn(200);
+    });
+    
+    // View question button handler - OPTIMIZED
+    $('.view-question').on('click', function() {
+        let questionId = $(this).data('id');
+        let questionType = $(this).data('type');
+        
+        console.log('Viewing question:', questionId, 'Type:', questionType);
+        
+        // ✅ Check cache first - instant load if already viewed
+        if (questionCache[questionId]) {
+            console.log('Loading from cache');
+            $('#view-modal-body').html(questionCache[questionId]);
+            $('#view-question-modal').fadeIn(200);
+            return;
+        }
+        
+        // ✅ Show modal IMMEDIATELY with loading spinner
+        $('#view-modal-body').html(`
+            <div class="preview-loading">
+                <div class="loading-spinner"></div>
+                <span>Loading question...</span>
+            </div>
+        `);
+        $('#view-question-modal').fadeIn(200);
+        
+        // ✅ Single AJAX call to get both data and template
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'wpsqp_get_question_with_view',
+                id: questionId,
+                nonce: '<?php echo wp_create_nonce('wpsqp_question_nonce'); ?>'
+            },
+            success: function(response) {
+                console.log('Question loaded:', response);
+                
+                if (response.success) {
+                    // ✅ Store in cache for next time
+                    questionCache[questionId] = response.data.html;
+                    $('#view-modal-body').html(response.data.html);
+                } else {
+                    $('#view-modal-body').html(`
+                        <div class="preview-error">
+                            <span class="dashicons dashicons-warning"></span>
+                            <p>Error: ${response.data}</p>
+                        </div>
+                    `);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Load error:', error);
+                $('#view-modal-body').html(`
+                    <div class="preview-error">
+                        <span class="dashicons dashicons-warning"></span>
+                        <p>Error loading question. Please try again.</p>
+                    </div>
+                `);
+            }
+        });
+    });
+    
+    // Delete question
+    $('.delete-question').on('click', function() {
+        currentQuestionId = $(this).data('id');
+        $('#delete-question-modal').fadeIn(200);
+    });
+    
+    $('#confirm-delete-question').on('click', function() {
+        if (!currentQuestionId) return;
+        
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'wpsqp_delete_question',
+                id: currentQuestionId,
+                nonce: '<?php echo wp_create_nonce('wpsqp_question_nonce'); ?>'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // ✅ Clear cache for deleted question
+                    delete questionCache[currentQuestionId];
                     location.reload();
                 } else {
                     alert(response.data);
