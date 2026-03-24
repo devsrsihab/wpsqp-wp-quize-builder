@@ -88,18 +88,37 @@ class WPSQP_Core {
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('wpsqp_nonce'),
             'user_logged_in' => is_user_logged_in(),
+            'strings' => [
+                'save_test' => __('Save Test', 'wpsqptxd'),
+                'update_test' => __('Update Test', 'wpsqptxd'),
+                'confirm_delete' => __('Are you sure you want to delete this question?', 'wpsqptxd'),
+            ]
         ]);
     }
-    
+
 
     
     public function enqueueAdminAssets($hook) {
-        if (strpos($hook, 'wpsqp-') !== false || $hook == 'post.php' || $hook == 'post-new.php') {
-            wp_enqueue_style('wpsqp-admin', WPSQP_PLUGIN_URL . 'assets/css/admin-style.css', [], WPSQP_VERSION);
-            wp_enqueue_script('wpsqp-admin', WPSQP_PLUGIN_URL . 'assets/js/admin.js', ['jquery'], WPSQP_VERSION, true);
+        if (strpos($hook, 'wpsqp-') !== false || $hook === 'post.php' || $hook === 'post-new.php') {
+            wp_enqueue_style('wpsqp-admin',      WPSQP_PLUGIN_URL . 'assets/admin/css/quiz-builder.css',   [], WPSQP_VERSION);
+            wp_enqueue_style('wpsqp-quizemodal', WPSQP_PLUGIN_URL . 'assets/admin/css/quiz-modal.css',     [], WPSQP_VERSION);
+            // ✅ CSS ছিল script হিসেবে — এখন সঠিকভাবে style হিসেবে load হচ্ছে
+            wp_enqueue_style('wpsqp-questions',  WPSQP_PLUGIN_URL . 'assets/admin/css/quiz-questions.css', [], WPSQP_VERSION);
+            wp_enqueue_script('wpsqp-admin',     WPSQP_PLUGIN_URL . 'assets/admin/js/quiz-builder.js',     ['jquery'], WPSQP_VERSION, true);
+
+            // ✅ Admin AJAX nonce localize করো
+            wp_localize_script('wpsqp-admin', 'wpsqp_admin_ajax', [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce'    => wp_create_nonce('wpsqp_question_nonce'),
+                'strings'  => [
+                    'confirm_delete' => __('Are you sure you want to delete this question?', 'wpsqptxd'),
+                    'saving'         => __('Saving...', 'wpsqptxd'),
+                    'saved'          => __('Saved!', 'wpsqptxd'),
+                    'error'          => __('Error occurred.', 'wpsqptxd'),
+                ],
+            ]);
         }
     }
-    
     public function addOrderMetaBox() {
         
     }
