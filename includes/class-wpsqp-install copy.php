@@ -116,13 +116,12 @@ class WPSQP_Install {
         dbDelta($sql_test_questions);
         
         // =====================================================
-        // 6. Normal MCQ Table (Depends on Questions) - WITH option_content
+        // 6. Normal MCQ Table (Depends on Questions)
         // =====================================================
         $table_normal_mcq = $table_prefix . 'normal_mcq';
         $sql_normal_mcq = "CREATE TABLE IF NOT EXISTS $table_normal_mcq (
             id varchar(50) NOT NULL,
             question_id varchar(50) NOT NULL,
-            option_content longtext DEFAULT NULL,
             options longtext NOT NULL,
             correct_answer varchar(50) NOT NULL,
             PRIMARY KEY (id),
@@ -133,13 +132,12 @@ class WPSQP_Install {
         dbDelta($sql_normal_mcq);
         
         // =====================================================
-        // 7. Normal MCQ With Images Table (Depends on Questions) - WITH option_content
+        // 7. Normal MCQ With Images Table (Depends on Questions)
         // =====================================================
         $table_normal_mcq_images = $table_prefix . 'normal_mcq_images';
         $sql_normal_mcq_images = "CREATE TABLE IF NOT EXISTS $table_normal_mcq_images (
             id varchar(50) NOT NULL,
             question_id varchar(50) NOT NULL,
-            option_content longtext DEFAULT NULL,
             options longtext NOT NULL,
             correct_answer varchar(50) NOT NULL,
             PRIMARY KEY (id),
@@ -150,7 +148,7 @@ class WPSQP_Install {
         dbDelta($sql_normal_mcq_images);
         
         // =====================================================
-        // 8. Extracts With MCQ Table (Depends on Questions) - already has options_content
+        // 8. Extracts With MCQ Table (Depends on Questions)
         // =====================================================
         $table_extracts_mcq = $table_prefix . 'extracts_mcq';
         $sql_extracts_mcq = "CREATE TABLE IF NOT EXISTS $table_extracts_mcq (
@@ -175,7 +173,6 @@ class WPSQP_Install {
             id varchar(50) NOT NULL,
             question_id varchar(50) NOT NULL,
             extracts longtext NOT NULL,
-            option_content longtext DEFAULT NULL,
             statements longtext NOT NULL,
             PRIMARY KEY (id),
             UNIQUE KEY question_id (question_id),

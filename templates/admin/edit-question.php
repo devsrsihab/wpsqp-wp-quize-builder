@@ -21,7 +21,6 @@ $add_template = WPSQP_PLUGIN_DIR . 'templates/admin/questions/' . $type_lower . 
 ?>
 
 <div class="wrap wpsqp-edit-question-page">
-    <h1><?php printf(__('Edit %s Question', 'wpsqptxd'), $type_label); ?></h1>
     
     <?php if (file_exists($type_template)): ?>
         <!-- Use type-specific edit template -->

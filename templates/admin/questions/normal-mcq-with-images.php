@@ -12,24 +12,38 @@ $q_content   = $is_edit ? $question->question_content : '';
 // Load existing data for edit mode
 $options        = [];
 $correct_answer = '';
+$option_content = '';
 
 if ($is_edit && isset($type_data) && $type_data) {
     $options_raw = is_string($type_data->options) ? json_decode($type_data->options, true) : $type_data->options;
     $options = is_array($options_raw) ? $options_raw : [];
     $correct_answer = $type_data->correct_answer;
+    $option_content = isset($type_data->option_content) ? $type_data->option_content : '';
 }
 
 // Default: 4 empty options
 if (empty($options)) {
     $options = [
-        ['id' => 'opt_1', 'text' => '', 'image' => ''],
-        ['id' => 'opt_2', 'text' => '', 'image' => ''],
-        ['id' => 'opt_3', 'text' => '', 'image' => ''],
-        ['id' => 'opt_4', 'text' => '', 'image' => ''],
+        ['id' => 'opt_1', 'text' => '', 'image_id' => ''],
+        ['id' => 'opt_2', 'text' => '', 'image_id' => ''],
+        ['id' => 'opt_3', 'text' => '', 'image_id' => ''],
+        ['id' => 'opt_4', 'text' => '', 'image_id' => ''],
     ];
 }
 
 $max_options = 6;
+
+// Function to get image URL from ID (for edit mode display)
+function wpsqp_get_image_url($image_id) {
+    if (empty($image_id)) {
+        return '';
+    }
+    $url = wp_get_attachment_url($image_id);
+    if (!$url) {
+        $url = wp_get_attachment_image_url($image_id, 'medium');
+    }
+    return $url;
+}
 ?>
 
 <div class="wrap wpsqp-question-wrap">
@@ -72,6 +86,28 @@ $max_options = 6;
         </div>
 
         <!-- ═══════════════════════════════════════
+             SECTION: Option Content (Rich Text)
+        ════════════════════════════════════════ -->
+        <div class="postbox">
+            <div class="postbox-header">
+                <h2><?php _e('Option Content / Question Statement', 'wpsqptxd'); ?></h2>
+            </div>
+            <div class="inside">
+                <p class="description">
+                    <?php _e('Add the question statement or instruction that appears above the options. You can use bold, italic, images, etc.', 'wpsqptxd'); ?>
+                </p>
+                <?php
+                wp_editor($option_content, 'option_content', [
+                    'textarea_name' => 'option_content',
+                    'textarea_rows' => 5,
+                    'media_buttons' => true,
+                    'teeny'         => false,
+                ]);
+                ?>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════
              SECTION 2: Answer Options with Images
         ════════════════════════════════════════ -->
         <div class="postbox">
@@ -87,12 +123,15 @@ $max_options = 6;
                     <?php foreach ($options as $index => $option):
                         $opt_id = isset($option['id']) ? esc_attr($option['id']) : 'opt_' . ($index + 1);
                         $opt_text = isset($option['text']) ? esc_attr($option['text']) : '';
-                        $opt_image = isset($option['image']) ? esc_url($option['image']) : '';
+                        $opt_image_id = isset($option['image_id']) ? intval($option['image_id']) : 0;
+                        $opt_image_url = $opt_image_id ? wp_get_attachment_url($opt_image_id) : '';
                         $opt_label = chr(65 + $index);
                         $checked = ($correct_answer === $opt_id || (string)$index === (string)$correct_answer) ? 'checked' : '';
                     ?>
-                    <div class="wpsqp-option-card" data-index="<?php echo $index; ?>">
-                        <div class="option-card-header">
+                    <div class="wpsqp-option-card" data-original-index="<?php echo $index; ?>">
+                        <input type="hidden" name="options[<?php echo $index; ?>][image_id]" class="option-image-id" value="<?php echo $opt_image_id; ?>">    
+                    
+                    <div class="option-card-header">
                             <div class="option-letter"><?php echo $opt_label; ?></div>
                             <div class="option-actions">
                                 <label class="correct-label">
@@ -111,22 +150,22 @@ $max_options = 6;
                         </div>
                         
                         <div class="option-image-preview">
-                            <?php if ($opt_image): ?>
-                            <img src="<?php echo $opt_image; ?>" alt="<?php echo esc_attr($opt_text); ?>" class="preview-img">
+                            <?php if ($opt_image_url): ?>
+                            <img src="<?php echo esc_url($opt_image_url); ?>" alt="<?php echo esc_attr($opt_text); ?>" class="preview-img">
                             <?php else: ?>
                             <div class="image-placeholder">
                                 <span class="dashicons dashicons-format-image"></span>
                                 <span class="placeholder-text"><?php _e('No image', 'wpsqptxd'); ?></span>
                             </div>
                             <?php endif; ?>
-                            <button type="button" class="button button-small upload-image-btn" data-index="<?php echo $index; ?>">
+                            <button type="button" class="button button-small upload-image-btn">
                                 <span class="dashicons dashicons-upload"></span> <?php _e('Upload Image', 'wpsqptxd'); ?>
                             </button>
                         </div>
                         
                         <div class="option-text-field">
                             <input type="hidden" name="options[<?php echo $index; ?>][id]" value="<?php echo $opt_id; ?>">
-                            <input type="hidden" name="options[<?php echo $index; ?>][image]" class="option-image-value" value="<?php echo $opt_image; ?>">
+                            <input type="hidden" name="options[<?php echo $index; ?>][image_id]" class="option-image-id" value="<?php echo $opt_image_id; ?>">
                             <input type="text" 
                                    name="options[<?php echo $index; ?>][text]" 
                                    value="<?php echo $opt_text; ?>" 
@@ -164,7 +203,7 @@ $max_options = 6;
 </div>
 
 <style>
-/* NORMAL_MCQ_WITH_IMAGES Styles */
+/* Keep your existing styles */
 .wpsqp-question-wrap {
     max-width: 1200px;
 }
@@ -179,6 +218,19 @@ $max_options = 6;
     font-weight: 600;
     margin-left: 10px;
     vertical-align: middle;
+}
+
+.postbox-header {
+    border-bottom: 1px solid #ccd0d4;
+    padding: 10px 12px;
+    background: #f6f7f7;
+}
+
+.postbox-header h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #23282d;
 }
 
 .wpsqp-options-grid {
@@ -292,16 +344,20 @@ $max_options = 6;
 }
 
 .upload-image-btn {
-    margin-top: 8px;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+    min-height: 26px;
+    line-height: 2.18181818;
+    padding: 0 8px;
+    font-size: 11px;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px;
 }
 
 .upload-image-btn .dashicons {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
 }
 
 .option-text-field {
@@ -318,8 +374,10 @@ $max_options = 6;
 .add-option-wrap {
     margin-top: 20px;
     text-align: center;
-    padding-top: 20px;
-    border-top: 1px solid #e2e4e7;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    align-items: center;
 }
 
 #wpsqp-add-option {
@@ -328,7 +386,6 @@ $max_options = 6;
     gap: 5px;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .wpsqp-options-grid {
         grid-template-columns: 1fr;
@@ -342,15 +399,9 @@ jQuery(document).ready(function($) {
     let maxOptions = <?php echo $max_options; ?>;
     
     // =====================================================
-    // Media Upload Handler
+    // Media Upload Handler - Store Image ID
     // =====================================================
-    let currentUploadButton = null;
-    let currentUploadIndex = null;
-    
-    function openMediaUploader(button, index) {
-        currentUploadButton = button;
-        currentUploadIndex = index;
-        
+    function openMediaUploader(button) {
         var mediaUploader = wp.media({
             title: '<?php _e('Select Option Image', 'wpsqptxd'); ?>',
             button: {
@@ -364,17 +415,23 @@ jQuery(document).ready(function($) {
         
         mediaUploader.on('select', function() {
             var attachment = mediaUploader.state().get('selection').first().toJSON();
+            var imageId = attachment.id;
             var imageUrl = attachment.url;
             
-            // Update the hidden field
-            $(currentUploadButton).closest('.option-image-preview').find('.option-image-value').val(imageUrl);
+            var $button = $(button);
+            var $optionCard = $button.closest('.wpsqp-option-card');
+            var $previewDiv = $optionCard.find('.option-image-preview');
+            var $imageIdField = $optionCard.find('.option-image-id');
+            
+            // Store Image ID
+            $imageIdField.val(imageId);
             
             // Update preview
-            var previewDiv = $(currentUploadButton).closest('.option-image-preview');
-            previewDiv.find('img').remove();
-            previewDiv.find('.image-placeholder').remove();
+            $previewDiv.find('img').remove();
+            $previewDiv.find('.image-placeholder').remove();
+            $previewDiv.prepend('<img src="' + imageUrl + '" alt="Option image" class="preview-img">');
             
-            previewDiv.prepend('<img src="' + imageUrl + '" alt="Option image" class="preview-img">');
+            console.log('Image ID saved for option:', imageId);
         });
         
         mediaUploader.open();
@@ -394,7 +451,7 @@ jQuery(document).ready(function($) {
         let label = String.fromCharCode(65 + newIndex);
         
         var cardHtml = `
-            <div class="wpsqp-option-card" data-index="${newIndex}">
+            <div class="wpsqp-option-card">
                 <div class="option-card-header">
                     <div class="option-letter">${label}</div>
                     <div class="option-actions">
@@ -412,18 +469,18 @@ jQuery(document).ready(function($) {
                         <span class="dashicons dashicons-format-image"></span>
                         <span class="placeholder-text"><?php _e('No image', 'wpsqptxd'); ?></span>
                     </div>
-                    <button type="button" class="button button-small upload-image-btn" data-index="${newIndex}">
+                    <button type="button" class="button button-small upload-image-btn">
                         <span class="dashicons dashicons-upload"></span> <?php _e('Upload Image', 'wpsqptxd'); ?>
                     </button>
                 </div>
                 <div class="option-text-field">
                     <input type="hidden" name="options[${newIndex}][id]" value="${optId}">
-                    <input type="hidden" name="options[${newIndex}][image]" class="option-image-value" value="">
+                    <input type="hidden" name="options[${newIndex}][image_id]" class="option-image-id" value="">
                     <input type="text" 
                            name="options[${newIndex}][text]" 
                            class="large-text"
                            placeholder="<?php _e('Option text...', 'wpsqptxd'); ?>"
-                           required>
+                           >
                 </div>
             </div>
         `;
@@ -431,9 +488,6 @@ jQuery(document).ready(function($) {
         $('#wpsqp-options-grid').append(cardHtml);
         optionCount++;
         $('#wpsqp-add-option').prop('disabled', optionCount >= maxOptions);
-        
-        // Re-index letters
-        reindexOptionLetters();
     });
     
     // =====================================================
@@ -449,32 +503,37 @@ jQuery(document).ready(function($) {
             $(this).closest('.wpsqp-option-card').remove();
             optionCount--;
             $('#wpsqp-add-option').prop('disabled', optionCount >= maxOptions);
-            reindexOptionLetters();
+            updateOptionLetters();
         }
     });
     
     // =====================================================
-    // Re-index Option Letters
+    // Update Option Letters (A, B, C...)
     // =====================================================
-    function reindexOptionLetters() {
+    function updateOptionLetters() {
         $('.wpsqp-option-card').each(function(index) {
-            let newIndex = index;
-            let optId = 'opt_' + (newIndex + 1);
-            let label = String.fromCharCode(65 + newIndex);
-            
-            $(this).attr('data-index', newIndex);
+            let label = String.fromCharCode(65 + index);
             $(this).find('.option-letter').text(label);
-            $(this).find('input[name^="options["]').each(function() {
-                let name = $(this).attr('name');
-                $(this).attr('name', name.replace(/options\[\d+\]/, 'options[' + newIndex + ']'));
-            });
+            
+            // Update the radio button value to match new ID
+            let optId = 'opt_' + (index + 1);
             $(this).find('input[name="correct_answer"]').val(optId);
             
             // Update hidden id field
             $(this).find('input[name^="options["][type="hidden"]').each(function() {
-                if ($(this).attr('name').indexOf('[id]') !== -1) {
+                let name = $(this).attr('name');
+                if (name.indexOf('[id]') !== -1) {
                     $(this).val(optId);
                 }
+            });
+        });
+        
+        // Also update the name attributes of all input fields
+        $('.wpsqp-option-card').each(function(newIndex) {
+            $(this).find('input[name^="options["]').each(function() {
+                let oldName = $(this).attr('name');
+                let newName = oldName.replace(/options\[\d+\]/, 'options[' + newIndex + ']');
+                $(this).attr('name', newName);
             });
         });
     }
@@ -484,12 +543,11 @@ jQuery(document).ready(function($) {
     // =====================================================
     $(document).on('click', '.upload-image-btn', function(e) {
         e.preventDefault();
-        let index = $(this).data('index');
-        openMediaUploader(this, index);
+        openMediaUploader(this);
     });
     
     // =====================================================
-    // Form Submit
+    // Form Submit - Sync TinyMCE and Save
     // =====================================================
     $('#wpsqp-normal-mcq-images-form').on('submit', function(e) {
         e.preventDefault();
@@ -511,15 +569,25 @@ jQuery(document).ready(function($) {
         
         $btn.prop('disabled', true).text('Saving...');
         
-        // Sync TinyMCE content
-        if (typeof tinyMCE !== 'undefined' && tinyMCE.get('question_content')) {
-            tinyMCE.get('question_content').save();
+        // Sync ALL TinyMCE editors
+        if (typeof tinyMCE !== 'undefined') {
+            if (tinyMCE.get('question_content')) {
+                tinyMCE.get('question_content').save();
+            }
+            if (tinyMCE.get('option_content')) {
+                tinyMCE.get('option_content').save();
+            }
+            tinyMCE.triggerSave();
         }
         
         var formData = new FormData(this);
         formData.append('action', 'wpsqp_save_question');
         
-        console.log('Submitting form...');
+        // Debug: Log all image IDs before submit
+        console.log('=== Form Data Before Submit ===');
+        $('.option-image-id').each(function(index) {
+            console.log('Option ' + index + ' image ID:', $(this).val());
+        });
         
         $.ajax({
             url: wpsqp_admin_ajax.ajax_url,

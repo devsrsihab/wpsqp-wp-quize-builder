@@ -48,10 +48,8 @@ class WPSQP_Ajax {
             ? sanitize_text_field($_POST['question_id'])
             : uniqid('q_');
         $question_type    = isset($_POST['question_type'])    ? sanitize_text_field($_POST['question_type'])    : '';
-        $question_content = isset($_POST['question_content']) ? wp_kses_post($_POST['question_content']) : '';
-
-        error_log('question content'. $question_content );
-
+        $question_content = isset($_POST['question_content']) ? wp_kses_post($_POST['question_content'])        : '';
+        
         if (empty($question_type)) {
             wp_send_json_error('Question type is required');
         }
@@ -170,7 +168,7 @@ class WPSQP_Ajax {
         
         // Convert type to filename (e.g., EXTRACTS_WITH_MCQ -> extracts-with-mcq)
         $type_lower = strtolower(str_replace('_', '-', $question_type));
-        $view_template = WPSQP_PLUGIN_DIR . 'templates/admin/questions/views/view-' . $type_lower . '.php';
+        $view_template = WPSQP_PLUGIN_DIR . 'templates/admin/questions/view-' . $type_lower . '.php';
         
         error_log('Looking for view template: ' . $view_template);
         error_log('File exists: ' . (file_exists($view_template) ? 'YES' : 'NO'));
@@ -280,7 +278,6 @@ class WPSQP_Ajax {
         error_log('saveNormalMCQ completed');
     }
 
-
     /**
      * Save NORMAL_MCQ_WITH_IMAGES specific data
      */
@@ -288,13 +285,11 @@ class WPSQP_Ajax {
         global $wpdb;
         
         error_log('=== saveNormalMCQWithImages called ===');
-        error_log('Question ID: ' . $question_id);
         
         $options = [];
         
-        // Get option content
+        // ✅ Get option content (rich text for options section)
         $option_content = isset($data['option_content']) ? wp_kses_post($data['option_content']) : '';
-        error_log('Option content length: ' . strlen($option_content));
         
         // Get correct answer ID from radio button
         $correct_answer = isset($data['correct_answer']) ? sanitize_text_field($data['correct_answer']) : '';
@@ -304,16 +299,15 @@ class WPSQP_Ajax {
             foreach ($data['options'] as $index => $option) {
                 $option_id = isset($option['id']) ? sanitize_text_field($option['id']) : 'opt_' . ($index + 1);
                 $option_text = isset($option['text']) ? sanitize_text_field($option['text']) : '';
-                // ✅ FIX: Use 'image_id' instead of 'image'
-                $option_image_id = isset($option['image_id']) ? intval($option['image_id']) : 0;
+                $option_image = isset($option['image']) ? esc_url_raw($option['image']) : '';
                 
                 $options[] = [
-                    'id'       => $option_id,
-                    'text'     => $option_text,
-                    'image_id' => $option_image_id,  // ✅ Changed from 'image' to 'image_id'
+                    'id'    => $option_id,
+                    'text'  => $option_text,
+                    'image' => $option_image,
                 ];
                 
-                error_log('Option ' . $index . ': ID=' . $option_id . ', Text=' . $option_text . ', Image ID=' . $option_image_id);
+                error_log('Option ' . $index . ': ID=' . $option_id . ', Image=' . $option_image);
             }
         }
         
@@ -327,21 +321,18 @@ class WPSQP_Ajax {
         
         error_log('Saving data: ' . print_r($type_data, true));
         
-        // Check if record exists
         $existing = $wpdb->get_var($wpdb->prepare(
             "SELECT id FROM {$table_prefix}normal_mcq_images WHERE question_id = %s",
             $question_id
         ));
         
         if ($existing) {
-            error_log('Updating existing record for question: ' . $question_id);
             unset($type_data['id']);
-            $result = $wpdb->update($table_prefix . 'normal_mcq_images', $type_data, ['question_id' => $question_id]);
-            error_log('Update result: ' . ($result !== false ? 'success' : 'failed - ' . $wpdb->last_error));
+            $wpdb->update($table_prefix . 'normal_mcq_images', $type_data, ['question_id' => $question_id]);
+            error_log('Updated existing record');
         } else {
-            error_log('Inserting new record for question: ' . $question_id);
-            $result = $wpdb->insert($table_prefix . 'normal_mcq_images', $type_data);
-            error_log('Insert result: ' . ($result ? 'success, ID: ' . $wpdb->insert_id : 'failed - ' . $wpdb->last_error));
+            $wpdb->insert($table_prefix . 'normal_mcq_images', $type_data);
+            error_log('Inserted new record');
         }
         
         error_log('saveNormalMCQWithImages completed');
@@ -352,10 +343,6 @@ class WPSQP_Ajax {
      */
     private static function saveExtractsWithMCQ($table_prefix, $question_id, $data) {
         global $wpdb;
-
-        error_log('=== saveExtractsWithMCQ called ===');
-        error_log('Question ID: ' . $question_id);
-        error_log('Data received: ' . print_r($data, true));
 
         $extracts = [];
         if (isset($data['extracts']) && is_array($data['extracts'])) {
@@ -384,32 +371,23 @@ class WPSQP_Ajax {
         $type_data = [
             'id'              => uniqid('emcq_'),
             'question_id'     => $question_id,
-            'extracts'        => json_encode($extracts, JSON_UNESCAPED_UNICODE),
+            'extracts'        => json_encode($extracts),
             'options_content' => $options_content,
-            'options'         => json_encode($options, JSON_UNESCAPED_UNICODE),
+            'options'         => json_encode($options),
             'correct_answer'  => $correct_answer,
         ];
         
-        error_log('Type data to save: ' . print_r($type_data, true));
-        
-        // Check if record exists
         $existing = $wpdb->get_var($wpdb->prepare(
             "SELECT id FROM {$table_prefix}extracts_mcq WHERE question_id = %s",
             $question_id
         ));
         
         if ($existing) {
-            error_log('Updating existing record for question: ' . $question_id);
             unset($type_data['id']);
-            $result = $wpdb->update($table_prefix . 'extracts_mcq', $type_data, ['question_id' => $question_id]);
-            error_log('Update result: ' . ($result !== false ? 'success' : 'failed - ' . $wpdb->last_error));
+            $wpdb->update($table_prefix . 'extracts_mcq', $type_data, ['question_id' => $question_id]);
         } else {
-            error_log('Inserting new record for question: ' . $question_id);
-            $result = $wpdb->insert($table_prefix . 'extracts_mcq', $type_data);
-            error_log('Insert result: ' . ($result ? 'success, ID: ' . $wpdb->insert_id : 'failed - ' . $wpdb->last_error));
+            $wpdb->insert($table_prefix . 'extracts_mcq', $type_data);
         }
-        
-        error_log('saveExtractsWithMCQ completed');
     }
     
     /**
@@ -809,12 +787,8 @@ class WPSQP_Ajax {
                     if (is_string($type_data->options)) {
                         $type_data->options = json_decode($type_data->options, true);
                     }
-                    // ✅ Log image IDs for debugging
-                    if (is_array($type_data->options)) {
-                        foreach ($type_data->options as $opt) {
-                            error_log('Loaded option image_id: ' . ($opt['image_id'] ?? 'none'));
-                        }
-                    }
+                    error_log('NORMAL_MCQ_WITH_IMAGES - Options count: ' . (is_array($type_data->options) ? count($type_data->options) : 0));
+                    error_log('NORMAL_MCQ_WITH_IMAGES - option_content: ' . substr($type_data->option_content, 0, 100));
                 }
                 break;
                 
@@ -1014,7 +988,7 @@ class WPSQP_Ajax {
         
         // Get view template
         $type_lower = strtolower(str_replace('_', '-', $question->question_type));
-        $view_template = WPSQP_PLUGIN_DIR . 'templates/admin/questions/views/view-' . $type_lower . '.php';
+        $view_template = WPSQP_PLUGIN_DIR . 'templates/admin/questions/view-' . $type_lower . '.php';
         
         // If specific template not found, use generic
         if (!file_exists($view_template)) {

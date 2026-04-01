@@ -67,8 +67,17 @@ if (empty($options)) {
 ?>
 
 <div class="wrap wpsqp-question-page">
-    <h1><?php echo $edit_mode ? __('Edit Extracts with MCQ Question', 'wpsqptxd') : __('Add Extracts with MCQ Question', 'wpsqptxd'); ?></h1>
-    
+    <h1 class="wp-heading-inline">
+        <?php echo $edit_mode ? __('Edit Question', 'wpsqptxd') : __('Add Question', 'wpsqptxd'); ?>
+    </h1>
+    <a href="<?php echo admin_url('admin.php?page=wpsqp-questions'); ?>" class="page-title-action">
+        <?php _e('Back to Questions', 'wpsqptxd'); ?>
+    </a>
+    <hr class="wp-header-end">    
+
+
+
+
     <form id="wpsqp-question-form" method="post">
         <?php wp_nonce_field('wpsqp_save_question', 'wpsqp_question_nonce'); ?>
         <input type="hidden" name="question_id" value="<?php echo esc_attr($question_id); ?>">
@@ -80,14 +89,14 @@ if (empty($options)) {
                 <div id="post-body-content">
                     
                     <!-- Question Title/Instruction -->
-                    <div class="postbox">
+                    <!-- <div class="postbox">
                         <h2 class="hndle"><?php _e('Question Instruction', 'wpsqptxd'); ?></h2>
                         <div class="inside">
                             <p class="description">
                                 <?php _e('This question type presents multiple extracts (text passages) followed by a multiple choice question.', 'wpsqptxd'); ?>
                             </p>
                         </div>
-                    </div>
+                    </div> -->
                     
                     <!-- Extracts Tabs Section -->
                     <div class="postbox">
@@ -380,7 +389,17 @@ if (empty($options)) {
     font-weight: bold;
     color: #2271b1;
 }
-
+.wpsqp-type-badge {
+    display: inline-block;
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 10px;
+    vertical-align: middle;
+}
 .option-actions {
     display: flex;
     align-items: center;

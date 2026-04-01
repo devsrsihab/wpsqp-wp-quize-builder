@@ -41,25 +41,23 @@ if (empty($options)) {
     <input type="hidden" name="question_id" value="<?php echo esc_attr($question->id); ?>">
     <input type="hidden" name="question_type" value="<?php echo esc_attr($question->question_type); ?>">
     
+
+    <h1 class="wp-heading-inline">
+        <?php echo $is_edit ? __('Edit Question', 'wpsqptxd') : __('Add Question', 'wpsqptxd'); ?>
+        <span class="wpsqp-type-badge">EXTRACTS WITH MCQ</span>
+    </h1>
+    <a href="<?php echo admin_url('admin.php?page=wpsqp-questions'); ?>" class="page-title-action">
+        <?php _e('Back to Questions', 'wpsqptxd'); ?>
+    </a>
+    <hr class="wp-header-end">
+
+
+
     <div id="poststuff">
         <div id="post-body" class="metabox-holder columns-2">
             <div id="post-body-content">
                 
-                <!-- Question Content -->
-                <div class="postbox">
-                    <h2 class="hndle"><?php _e('Question Content', 'wpsqptxd'); ?></h2>
-                    <div class="inside">
-                        <?php
-                        wp_editor($question->question_content, 'question_content', [
-                            'textarea_name' => 'question_content',
-                            'textarea_rows' => 10,
-                            'media_buttons' => true,
-                            'teeny' => false,
-                            'quicktags' => true
-                        ]);
-                        ?>
-                    </div>
-                </div>
+
                 
                 <!-- Extracts Tabs Section -->
                 <div class="postbox">
@@ -188,36 +186,31 @@ if (empty($options)) {
                     </div>
                 </div>
                 
-            </div><!-- #post-body-content -->
-            
-            <div id="postbox-container-1" class="postbox-container">
-                <div class="postbox">
-                    <h2 class="hndle"><?php _e('Publish', 'wpsqptxd'); ?></h2>
-                    <div class="inside">
-                        <div class="submitbox">
-                            <div id="major-publishing-actions">
-                                <div id="delete-action">
-                                    <a href="<?php echo admin_url('admin.php?page=wpsqp-questions'); ?>" class="submitdelete deletion">
-                                        <?php _e('Cancel', 'wpsqptxd'); ?>
-                                    </a>
-                                </div>
-                                <div id="publishing-action">
+
+                               <div >
                                     <span class="spinner"></span>
                                     <button type="submit" class="button button-primary button-large" id="publish-btn">
                                         <?php _e('Update Question', 'wpsqptxd'); ?>
                                     </button>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div><!-- #postbox-container-1 -->
+            </div><!-- #post-body-content -->
+            
+   
         </div><!-- #post-body -->
     </div><!-- #poststuff -->
 </form>
 
 
 <style>
+.wp-core-ui .button-group.button-small .button, .wp-core-ui .button.button-small {
+    min-height: 26px;
+    line-height: 2.18181818;
+    padding: 0 8px;
+    font-size: 11px;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-around !important;
+}
 /* Extracts Tabs Styling */
 .extracts-tabs-container {
     border: 1px solid #ccd0d4;
@@ -478,10 +471,36 @@ jQuery(document).ready(function($) {
         });
     });
     
-    // Form submit
+
+    // Form submit - FIXED with proper TinyMCE sync
     $('#wpsqp-question-form').on('submit', function(e) {
         e.preventDefault();
         
+        // ✅ Force sync ALL TinyMCE editors
+        if (typeof tinyMCE !== 'undefined') {
+            // Sync main question content
+            if (tinyMCE.get('question_content')) {
+                tinyMCE.get('question_content').save();
+            }
+            
+            // Sync all extract editors
+            $('.extract-editor').each(function() {
+                var editorId = $(this).attr('id');
+                if (tinyMCE.get(editorId)) {
+                    tinyMCE.get(editorId).save();
+                }
+            });
+            
+            // Sync options content editor
+            if (tinyMCE.get('options_content')) {
+                tinyMCE.get('options_content').save();
+            }
+            
+            // Force all textareas to update
+            tinyMCE.triggerSave();
+        }
+        
+        // Validate correct answer
         if ($('input[name="correct_answer"]:checked').length === 0) {
             alert('<?php _e('Please select the correct answer.', 'wpsqptxd'); ?>');
             return;
@@ -492,6 +511,18 @@ jQuery(document).ready(function($) {
         let formData = new FormData(this);
         formData.append('action', 'wpsqp_save_question');
         
+        // ✅ Debug: Log all form data before sending
+        console.log('=== Form Data Before Submit ===');
+        for (var pair of formData.entries()) {
+            if (pair[0] === 'options_content') {
+                console.log(pair[0] + ': ' + pair[1]);
+            } else if (pair[0] === 'question_content') {
+                console.log(pair[0] + ': ' + pair[1].substring(0, 100) + '...');
+            } else {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
+        }
+        
         $.ajax({
             url: ajaxurl,
             type: 'POST',
@@ -499,6 +530,7 @@ jQuery(document).ready(function($) {
             processData: false,
             contentType: false,
             success: function(response) {
+                console.log('Save response:', response);
                 if (response.success) {
                     window.location.href = '<?php echo admin_url('admin.php?page=wpsqp-questions'); ?>';
                 } else {
@@ -506,7 +538,9 @@ jQuery(document).ready(function($) {
                     $('#publish-btn').prop('disabled', false).text('Update Question');
                 }
             },
-            error: function() {
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', error);
+                console.error('Response:', xhr.responseText);
                 alert('<?php _e('Error updating question', 'wpsqptxd'); ?>');
                 $('#publish-btn').prop('disabled', false).text('Update Question');
             }
